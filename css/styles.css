@@ -1,0 +1,36 @@
+#login {
+
+}
+ @media (min-width: 680px) {
+
+
+    body.login-action-rp #login,
+    body.login-action-resetpass #login {
+        min-width: 640px;
+    }
+
+
+    body.login-action-rp #login #resetpassform .user-pass1-wrap,
+    body.login-action-resetpass #login #resetpassform .user-pass1-wrap  {
+        float: left;
+        margin-right: 20px;
+    }
+
+
+    body.login-action-rp #login #resetpassform .description.indicator-hint label,
+    body.login-action-resetpass #login #resetpassform .description.indicator-hint label  {
+        display: block;
+    }
+
+
+    body.login-action-rp #login #resetpassform .submit,
+    body.login-action-resetpass #login #resetpassform .submit  {
+        clear: both;
+    }
+
+
+    body.login-action-rp #login #resetpassform .submit input,
+    body.login-action-resetpass #login #resetpassform .submit input  {
+        float: left;
+    }
+}
