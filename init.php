@@ -67,17 +67,21 @@ foreach($includes as $include){
 // add our actions and filters
 // add_action( 'init', array(new UserPasswordReset, 'init') );
 
-// password resetting
-add_action( 'password_reset', array(new UserPasswordReset, 'user_reset_password') );
-// when then user updates their profile and changes their password
-if ( is_admin() )
-    add_action( 'user_profile_update_errors', array(new UserPasswordReset, 'profile_update'), 11, 3 );
-add_filter('password_hint', array(new UserPasswordReset, 'password_hint'));
-
-
+//  when a user is logging in, we need to check their password and reset it if needed
 add_filter( 'authenticate', array(new CheckPasswordOnLogin,'init'), 30, 3 );
-add_action( 'login_enqueue_scripts', array(new LoginPageStyles, 'init') );
 
-// add password stength action if option is set
-if($force_strong_password == 'yes')
-    add_action( 'validate_password_reset', array(new CheckPasswordStrength, 'init'), 10, 2 );
+// display password expiration in profile
+add_action( 'show_user_profile', array( new DisplayPasswordWarning, 'display_password_expiration') );
+add_action( 'edit_user_profile', array( new DisplayPasswordWarning, 'display_password_expiration') );
+
+// Check password strength
+add_action( 'resetpass_form', array(new CheckPasswordStrength, 'validate_resetpass_form'), 10);
+add_action( 'validate_password_reset', array(new CheckPasswordStrength, 'validate_password_reset'), 10, 2 );
+add_action( 'user_profile_update_errors', array(new CheckPasswordStrength, 'validate_profile_update'), 10, 3 );
+
+
+// when then user updates their profile and changes their password, set "last reset" time
+if ( is_admin() )
+    add_action( 'user_profile_update_errors', array(new UserPasswordReset, 'profile_update'), 15, 3 );
+else // when a password is reset from the frontend, set "last reset" time
+add_action( 'after_password_reset', array(new UserPasswordReset, 'user_reset_password'), 15, 2 );
