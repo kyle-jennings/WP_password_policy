@@ -1,5 +1,7 @@
 <?php
 
+
+
 /**
  * This class is used to force users to reset their password after attempting to login
  */
@@ -22,8 +24,7 @@ class CheckPasswordOnLogin {
             return false;
 
         $options = get_site_option('password_policy');
-        if( $options['use_network_settings'] )
-            return $options['use_network_settings'];
+
 
         return false;
     }
@@ -31,14 +32,11 @@ class CheckPasswordOnLogin {
 
     // get the options
     public function get_settings_values(){
-        if( $this->use_network_settings() == 'yes' )
-            $options = get_site_option('password_policy');
-        else
-            $options = get_option('password_policy');
+
+        $options = get_site_option('gsa_site_settings');
+
         $lifespan = $options['password_lifespan'];
         $this->lifespan = $lifespan;
-        $this->password_hint = $options['password_hint'] ? $options['password_hint'] : null ;
-
         $this->expired = 60 * 60 * 24 * $this->lifespan;
     }
 
@@ -114,7 +112,7 @@ class CheckPasswordOnLogin {
      * [update_last_login description]
      * @return [type] [description]
      */
-    function update_last_login($user_id, $timestamp){
+    function update_last_login($user_id = null, $timestamp = null){
 
         // we want to use the timestamp from the login time, but if thats missing
         // then do something. right now im just resetting it
@@ -140,10 +138,10 @@ class CheckPasswordOnLogin {
             $timestamp = time();
 
         // Do we have this information in our transients already?
-        $age = get_user_meta($this->user_id, 'password_reset', true);
+        $password_reset = get_user_meta($this->user_id, 'password_reset', true);
 
         // yes? cool that means the password has not yet expired, otherwise we need to reset it
-        if( !isset($age) || $this->is_expired($age, $timestamp) )
+        if( !isset($password_reset) || $this->is_expired($password_reset, $timestamp) )
             return 'true';
 
         return 'false';
@@ -151,10 +149,18 @@ class CheckPasswordOnLogin {
 
 
     // Check to see if the timestamp is expired
-    function is_expired($age, $timestamp){
+    function is_expired($password_reset, $timestamp){
 
         $time_since = $timestamp - $age;
-        if( $time_since >= $this->expired){
+
+        $one_day = (24 * 60 * 60);
+
+        $expires_in_days = (($password_reset + $this->expired) - time() ) / $one_day;
+        $expires_in_days = round($expires_in_days);
+        error_log( $expires_in_days );
+
+
+        if( $expires_in_days <= 0){
             return true;
         }
 
@@ -181,8 +187,8 @@ class CheckPasswordOnLogin {
      * This is where we actually reset the password
      * an email notification is NOT sent
      */
-    function reset_password($user_id, $timestamp = null) {
-        error_log('why is this running?');
+    function reset_password($user_id = null, $timestamp = null) {
+
         $new_password = $this->randomPassword();
         wp_set_password($new_password,$this->user_id);
 
