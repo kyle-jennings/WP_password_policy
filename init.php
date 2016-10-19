@@ -1,6 +1,6 @@
 <?php
 /*
-    Plugin Name:Standard and Multisite Password Policy
+    Plugin Name: Password Policy Manager
     Description: provide password expiration, emergency mass resetting, and helpful notifications
     Author: Kyle Jennings
     Version: 1.0.0
@@ -53,6 +53,7 @@ $includes = array(
     'CheckPasswordOnLogin',
     'UserPasswordReset',
     'LoginPageStyles',
+    'DisplayPasswordWarning',
 );
 
 // add check password strength file if option is set
@@ -74,10 +75,16 @@ add_filter( 'authenticate', array(new CheckPasswordOnLogin,'init'), 30, 3 );
 add_action( 'show_user_profile', array( new DisplayPasswordWarning, 'display_password_expiration') );
 add_action( 'edit_user_profile', array( new DisplayPasswordWarning, 'display_password_expiration') );
 
-// Check password strength
-add_action( 'resetpass_form', array(new CheckPasswordStrength, 'validate_resetpass_form'), 10);
-add_action( 'validate_password_reset', array(new CheckPasswordStrength, 'validate_password_reset'), 10, 2 );
-add_action( 'user_profile_update_errors', array(new CheckPasswordStrength, 'validate_profile_update'), 10, 3 );
+
+// include ze files
+if($force_strong_password == 'yes'){
+    // Check password strength
+    add_action( 'resetpass_form', array(new CheckPasswordStrength, 'validate_resetpass_form'), 10);
+    add_action( 'validate_password_reset', array(new CheckPasswordStrength, 'validate_password_reset'), 10, 2 );
+    add_action( 'user_profile_update_errors', array(new CheckPasswordStrength, 'validate_profile_update'), 10, 3 );
+
+}
+
 
 
 // when then user updates their profile and changes their password, set "last reset" time

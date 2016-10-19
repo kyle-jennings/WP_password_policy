@@ -91,7 +91,7 @@ class CheckPasswordOnLogin {
         //reset the password and reset the timeout
         if( $reset_needed == 'true'){
             $this->reset_password($this->user_id, $this->timestamp);
-            $this->set_password_transient($this->user_id, $this->timestamp);
+            // $this->set_password_transient($this->user_id, $this->timestamp);
 
             $user = new WP_Error(
                 'authentication_failed',

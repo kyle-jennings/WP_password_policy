@@ -6,6 +6,7 @@ class CheckPasswordStrength{
     public $new_pass = '';
     private $force_strong_password = 'yes';
     private $force_extra_strong_pw = 'no';
+    private $errors;
 
     public function __construct(){
         $this->force_strong_password = 'yes';
@@ -34,6 +35,16 @@ class CheckPasswordStrength{
     }
 
 
+    private function set_error($error){
+        if(is_wp_error($errors))
+            $this->errors->add( 'pass', $error, 'mbm_bad_password' );
+        else
+            $this->errors = new WP_Error( 'pass', $error, 'mbm_bad_password' );
+
+        return $this->errors;
+    }
+
+
     // validate_password_reset!
     public function validate_password_reset( $errors, $user ){
 
@@ -55,11 +66,15 @@ class CheckPasswordStrength{
         $last_reset = get_user_meta($user_id, 'password_reset', true);
 
         // password must be 1 day old
-        if( ! mbm_is_older_than(2, $last_reset) ){
-            $error = 'You password must be more than 1 day old before you can reset it';
-            $errors->add( 'pass', $error, 'mbm_bad_password' );
-            return $errors;
-        }
+        // if( ! mbm_is_older_than(2, $last_reset) ){
+        //     $error = 'You password must be more than 1 day old before you can reset it';
+        //     if(is_wp_error( $errors ))
+        //         $errors->add( 'pass', $error, 'mbm_bad_password' );
+        //     else
+        //         $errors = new WP_Error( 'pass', $error, 'mbm_bad_password' );
+        //
+        //     return $errors;
+        // }
 
 
         // Password cannot match any of hte previous 10
@@ -67,20 +82,18 @@ class CheckPasswordStrength{
 
         if( in_array($password, $prev_passwords ) ){
             $error = 'You cannot use any of your previous 10 passwords';
-            $errors->add( 'pass', $error, 'mbm_bad_password' );
-            return $errors;
+            return $this->set_error($error);
         }
 
         // if a password was not supplied then FAIL
         if($password == false){
             $error = 'You did not enter a password';
-            $errors->add( 'pass', $error, 'mbm_bad_password' );
-            return $errors;
+            return $this->set_error($error);
         }
 
         // Already got a password error?
     	if ( ( false === $password ) || ( is_wp_error( $errors ) && $errors->get_error_data( 'pass' ) ) ) {
-    		return $errors;
+    		return $this->errors;
     	}
 
         // calculate password strength
@@ -93,7 +106,11 @@ class CheckPasswordStrength{
         // if we have errors and password is not ok then we set the WP_Errors
         if(!empty($strength_errors) && $password_ok != true){
             foreach($strength_errors as $error){
-                $errors->add( 'pass', $error, 'mbm_bad_password' );
+                if(is_wp_error($errors))
+                    $errors->add( 'pass', $error, 'mbm_bad_password' );
+                else
+                    $errors = new WP_Error( 'pass', $error, 'mbm_bad_password' );
+
             }
         }
 

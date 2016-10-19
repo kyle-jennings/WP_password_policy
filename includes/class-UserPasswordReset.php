@@ -5,7 +5,6 @@
  */
 class UserPasswordReset{
 
-    public $password_hint = null;
     public $lifespan = 90;
     public $user_id;
     public $reset_date;
@@ -43,7 +42,6 @@ class UserPasswordReset{
             $options = get_option('password_policy');
 
         $this->lifespan = $options['password_lifespan'] ? intval($options['password_lifespan']) : 90 ;
-        $this->password_hint = $options['password_hint'] ? $options['password_hint'] : null ;
 
     }
 
@@ -63,7 +61,7 @@ class UserPasswordReset{
      */
     function profile_update( $errors, $update, $user ) {
 
-
+        error_log('before error checking');
         $this->user_id = $user->ID;
         if ( $errors->get_error_data( 'pass' ) || empty( $_POST['pass1'] ) || empty( $_POST['pass2'] ) )
             return;
@@ -71,52 +69,29 @@ class UserPasswordReset{
         if($timestamp == null)
             $timestamp = time();
 
-        $new_pass = $_POST['pass1'];
-        $this->user_save_last_10_passwords($new_pass);
-
         // Store timestamp
         update_user_meta( $this->user_id, 'password_reset', $timestamp );
+        $new_pass = $_POST['pass1'];
+        $this->set_previous_passwords($new_pass);
+
+        error_log('password reset in profile');
     }
 
 
     /**
      * When user successfully resets their own password, re-set the timestamp.
      */
-    function user_reset_password( $user, $new_pass ) {
+     function user_reset_password( $user, $new_pass ) {
 
+        error_log('password reset in form');
         if($timestamp == null)
             $timestamp = time();
 
         $this->user_id = $user->ID;
-        $this->user_save_last_10_passwords($new_pass);
-
         update_user_meta( $this->user_id, 'password_reset', $timestamp );
-    }
 
+        $this->set_previous_passwords($new_pass);
 
-    function user_save_last_10_passwords(){
-        $passwords = get_user_meta($this->user_id, 'previous_10_passwords', true);
-        $passwords = $this->count_previous_passwords($passwords);
-        $passwords[] = $new_pass;
-
-
-        update_user_meta($this->user_id, 'previous_10_passwords', $passwords);
-    }
-
-
-    /**
-     * Set the password hint if set
-     * @param  [type] $string [description]
-     * @return [type]         [description]
-     */
-    function password_hint($string){
-
-        if($this->password_hint)
-            $string = $this->password_hint;
-
-        $title = '<label for="hint">&nbsp;</label>';
-        $string = $title . $string;
-        return $string;
     }
 
     function count_previous_passwords($passwords){
@@ -128,4 +103,14 @@ class UserPasswordReset{
 
         return $passwords;
     }
+
+    function set_previous_passwords($new_pass){
+        error_log($new_pass);
+        $passwords = get_user_meta($this->user_id, 'previous_10_passwords', true);
+        $passwords = $this->count_previous_passwords($passwords);
+        $passwords[] = $new_pass;
+
+        update_user_meta($this->user_id, 'previous_10_passwords', $passwords);
+    }
+
 }

@@ -126,43 +126,6 @@ class PasswordPolicyAdminOptions {
             $saved_options = get_option('password_policy');
 
         add_settings_field(
-            'password_lifespan',
-            'Password Lifespan',
-            array($this, 'password_lifespan_field'),
-            'password_policy',
-            'password_policy_section',
-            $saved_options['password_lifespan']
-        );
-
-        add_settings_field(
-            'password_hint',
-            'Password Hint',
-            array($this, 'settings_password_hint_field'),
-            'password_policy',
-            'password_policy_section',
-            $saved_options['password_hint']
-        );
-
-
-        // add_settings_field(
-        //     'settings_reset_page_styles',
-        //     'Password Reset Page Styles',
-        //     array($this, 'settings_reset_page_styles_field'),
-        //     'password_policy',
-        //     'password_policy_section',
-        //     $saved_options['settings_reset_page_styles']
-        // );
-
-        add_settings_field(
-            'force_strong_password',
-            'Force Strong Passwords',
-            array($this, 'settings_force_strong_password_field'),
-            'password_policy',
-            'password_policy_section',
-            $saved_options['force_strong_password']
-        );
-
-        add_settings_field(
             'enforce_policy',
             'Enforce Policy',
             array($this, 'settings_enforce_policy_field'),
@@ -181,45 +144,33 @@ class PasswordPolicyAdminOptions {
                 $saved_options['use_network_settings']
             );
 
-        // // password strength settings
-        // add_settings_field(
-        //     'password_length_settings',
-        //     'Force Strong Passwords',
-        //     array($this, 'settings_password_length_settings_field'),
-        //     'password_policy',
-        //     'password_policy_section',
-        //     $saved_options['password_length_settings']
-        // );
+        $fields = array(
+            'force_strong_password' => 'Force Strong Passwords',
+            'password_lifespan' => 'Password Lifespan',
+            'password_length' => 'Password Length',
+            'password_numeral_count' => 'Amount of numbers required',
+            'password_capitals_count' => 'Amount of capital letters required',
+            'password_special_chars_count' => 'Amount of special characters required',
+            'password_hint' => 'Password Hint',
+        );
 
-        // // amount of numerals in password
-        // add_settings_field(
-        //     'password_numeral_count_settings',
-        //     'Force Strong Passwords',
-        //     array($this, 'settings_password_numeral_count_settings_field'),
-        //     'password_policy',
-        //     'password_policy_section',
-        //     $saved_options['password_numeral_count_settings']
-        // );
+        foreach($fields as $field=>$label){
 
-        // // amount of capital characters
-        // add_settings_field(
-        //     'password_capitals_count_settings',
-        //     'Force Strong Passwords',
-        //     array($this, 'settings_password_capitals_count_settings_field'),
-        //     'password_policy',
-        //     'password_policy_section',
-        //     $saved_options['password_capitals_count_settings']
-        // );
+            $field_type = 'password_range_field';
+            if ( in_array($field, array('force_strong_password', 'password_hint')) )
+                $field_type = $field.'_field';
 
-        // // amount of lowers characters
-        // add_settings_field(
-        //     'password_lowers_count_settings',
-        //     'Force Strong Passwords',
-        //     array($this, 'settings_password_lowers_count_settings_field'),
-        //     'password_policy',
-        //     'password_policy_section',
-        //     $saved_options['password_lowers_count_settings']
-        // );
+            $val = $saved_options[$field];
+
+            add_settings_field(
+                $field,
+                $label,
+                array($this, $field_type),
+                'password_policy',
+                'password_policy_section',
+                array('val' => $val, 'field' => $field)
+            );
+        }
 
 
     }
@@ -257,8 +208,6 @@ class PasswordPolicyAdminOptions {
     }
 
 
-
-    // Use the network settings over the individual site settings
     public function settings_use_network_settings_field( $args = array() ){
         $value  = isset($args) ? $args : 'no';
 
@@ -281,10 +230,48 @@ class PasswordPolicyAdminOptions {
     }
 
 
-    // toggle password strenth enforcment
-    public function settings_force_strong_password_field( $args = array() ){
-        $value  = isset($args) ? $args : 'no';
 
+
+
+    public function password_range_field($args = array()){
+
+        extract($args); // val, field
+        if(empty($field) )
+            return;
+
+        $value  = (intval($val) && isset($val) && !empty($val) ) ? $val : '0';
+        $output = '';
+        $output .= '<input type="number" name="password_policy['.$field.']" min="0" max="180" value="'.$value.'">';
+
+        echo $output;
+    }
+
+
+
+    public function password_hint_field($args = array()){
+
+        extract($args); // val, field
+        if(empty($field) )
+            return;
+
+        $value = ( is_string($val) && !empty($val) && isset($val) ) ? $val : '' ;
+        $settings = array(
+            'media_buttons' => false,
+            'textarea_rows' => 5,
+            'textarea_name' => 'password_policy[password_hint]'
+        );
+
+        wp_editor( $value, 'password_hint', $settings );
+    }
+
+
+
+    public function force_strong_password_field( $args = array() ){
+        extract($args); // val, field
+        if(empty($field) )
+            return;
+
+        $value  = isset($val) ? $val : 'no';
         $options = array('yes','no');
 
         $output = '';
@@ -304,32 +291,6 @@ class PasswordPolicyAdminOptions {
     }
 
 
-    // setup the lifespan field
-    public function password_lifespan_field($args = array()){
-
-        $value  = (intval($args) && isset($args) && !empty($args) ) ? $args : '0';
-
-        $output = '';
-        // Note the ID and the name attribute of the element match that of the ID in the call to add_settings_field
-        $output .= '<input type="number" name="password_policy[password_lifespan]" min="0" max="180" value="'.$value.'">';
-
-        echo $output;
-    }
-
-    // the password hint field - uses wp editor
-    public function settings_password_hint_field($args = array()){
-
-        $value = ( is_string($args) && !empty($args) && isset($args) ) ? $args : '' ;
-        $settings = array(
-            'media_buttons' => false,
-            'textarea_rows' => 5,
-            'textarea_name' => 'password_policy[password_hint]'
-        );
-
-        wp_editor( $value, 'password_hint', $settings );
-    }
-
-    // the styles field
     public function settings_reset_page_styles_field($args = array()){
 
         $value = ( is_string($args) && !empty($args) && isset($args) ) ? $args : '' ;
@@ -340,6 +301,9 @@ class PasswordPolicyAdminOptions {
         $output .= '</textarea>';
         echo $output;
     }
+
+
+
 
 
 
