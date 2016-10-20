@@ -44,6 +44,44 @@ class CheckPasswordStrength{
         return $this->errors;
     }
 
+    function days_ago($last_login){
+
+        if($last_login == '' || empty($last_login)){
+            return 0;
+        }
+
+        $time = time();
+
+        $diff = $time - $last_login;
+        $one_day = (24 * 60 * 60);
+        $days_ago = ceil($diff/$one_day);
+
+        return $days_ago;
+    }
+
+
+    function is_older_than($days = 90, $last_login){
+
+        // if the user's login/reset date is older than $days then we return TRUE
+        // TRUE because the function is to determine if the time is OLDER than whatever
+        if($last_login == '' || empty($last_login) ){
+            return true;
+        }
+
+        // get the length of time in days
+        $days_ago = $this->days_ago($last_login);
+        // if the last login/reset time is older than the setting we return it
+        // this is also true
+        if($days_ago >= $days){
+            return $days_ago;
+        }
+
+        // if the last login/reset is set and is not older than the setting,
+        // return false
+        return false;
+
+    }
+
 
     // validate_password_reset!
     public function validate_password_reset( $errors, $user ){
@@ -66,15 +104,15 @@ class CheckPasswordStrength{
         $last_reset = get_user_meta($user_id, 'password_reset', true);
 
         // password must be 1 day old
-        // if( ! mbm_is_older_than(2, $last_reset) ){
-        //     $error = 'You password must be more than 1 day old before you can reset it';
-        //     if(is_wp_error( $errors ))
-        //         $errors->add( 'pass', $error, 'mbm_bad_password' );
-        //     else
-        //         $errors = new WP_Error( 'pass', $error, 'mbm_bad_password' );
-        //
-        //     return $errors;
-        // }
+        if( ! $this->is_older_than(2, $last_reset) ){
+            $error = 'You password must be more than 1 day old before you can reset it';
+            if(is_wp_error( $errors ))
+                $errors->add( 'pass', $error, 'mbm_bad_password' );
+            else
+                $errors = new WP_Error( 'pass', $error, 'mbm_bad_password' );
+
+            return $errors;
+        }
 
 
         // Password cannot match any of hte previous 10
