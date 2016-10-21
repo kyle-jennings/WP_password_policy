@@ -7,7 +7,10 @@
     Author URI: kylejenningsdesign.com
 
 */
-
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+    die;
+}
 
 /**
  * Are we going to use the network settings or lets the individual sites to use their own?
